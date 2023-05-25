@@ -1,0 +1,37 @@
+run_hook()
+{
+    ##
+    ## leia as configurações do openswap.
+    ##
+    source /openswap.conf
+
+    ##
+    ## Opcional: Para evitar condições de corrida.
+    ##
+    x=0;
+    while [ ! -b "$keyfile_device" ] && [ $x -le 10 ]; do
+        x=$((x+1))
+        sleep .2
+    done
+    ##
+    ## Fim do opcional.
+    ##
+
+    if [ -z "$keyfile_device" ] || [ -z "$keyfile_filename" ]
+    then
+        ##
+        ## Caso em que nenhuma página de chave é fornecido nas
+        ## configurações.
+        ##
+        cryptsetup open $cryptsetup_options "$swap_device" "$crypt_swap_name"
+    else
+        ##
+        ## Caso quando o arquivo-chave é fornecido nas
+        ## configurações.
+        ##
+        mkdir openswap_keymount
+        mount $keyfile_device_mount_options "$keyfile_device" openswap_keymount
+        cryptsetup open $cryptsetup_options --key-file "openswap_keymount/$keyfile_filename" "$swap_device" "$crypt_swap_name"
+        umount openswap_keymount
+    fi
+}
